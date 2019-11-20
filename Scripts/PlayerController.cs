@@ -2,43 +2,50 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour {
-  
+public class PlayerController : MonoBehaviour
+{
+
+  public float penaltyTime;
   public float speed;
   public float jump;
-  public float timeLeft = 0.0f;
-  private bool onGround = true;
-  private Rigidbody rb;
+  private float _timeLeft = 0.0f;
+  private bool _onGround = true;
+  private Rigidbody _rb;
 
-  void Start()
+  private void Start()
   {
-    rb = GetComponent<Rigidbody>();
+    _rb = GetComponent<Rigidbody>();
+    _rb.drag = 2;
   }
 
-  void FixedUpdate()
+  private void FixedUpdate()
   {
-    if(timeLeft <= 0)
+    if(_timeLeft <= 0)
     {
-      float moveHorisontal = Input.GetAxis("Horizontal");
-      float moveVertical = Input.GetAxis("Vertical");
-      Vector3 movement = new Vector3(moveHorisontal, 0.0f, moveVertical);
-
-      rb.AddForce(movement * speed);
+      Move();
       Jump();
     }
     else{
-      timeLeft -= Time.deltaTime;
-      rb.velocity = Vector3.zero;
+      _timeLeft -= Time.deltaTime;
+      _rb.velocity = Vector3.zero;
     }
   }
-  
+
+  private void Move()
+  {
+    float moveHorizontal = Input.GetAxis("Horizontal");
+    float moveVertical = Input.GetAxis("Vertical");
+    Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
+
+    _rb.AddForce(movement * speed);
+  }
+
   private void Jump()
   {
-      if ((Input.GetButtonDown("Jump")) && onGround)
-      { 
-        rb.AddForce(new Vector3(0, jump, 0), ForceMode.Impulse);
-        onGround = false;
-      }
+    if ((!Input.GetButtonDown("Jump")) || !_onGround) return;
+    _rb.AddForce(new Vector3(0, jump, 0), ForceMode.Impulse);
+    _onGround = false;
+    _rb.drag = 0;
   }
 
   private void OnCollisionEnter(Collision collision)
@@ -47,20 +54,19 @@ public class PlayerController : MonoBehaviour {
     ChangeCollisionState(true, collision);
   }
 
-  public void  ChangeCollisionState(bool onGround, Collision collision)
+  private void  ChangeCollisionState(bool isOnGround, Collision collision)
   {
-    this.onGround = onGround;
+    this._onGround = isOnGround;
+    _rb.drag = 2;
     if ((collision.gameObject.name == "Cardboard Box 02.02") || (collision.gameObject.name == "Cardboard Box 14.10"))
     {
-      timeLeft = 3.0f;
-      rb.velocity = Vector3.zero;
+      _timeLeft = penaltyTime;
+      _rb.velocity = Vector3.zero;
     }
 
-    if (collision.gameObject.name == "Lava Cube 14.02")
-    {
-      timeLeft = 3.0f;
-      rb.velocity = Vector3.zero;
-      transform.position = new Vector3(0, 2.0f, 0);
-    }
+    if (collision.gameObject.name != "Lava Cube 14.02") return;
+    _timeLeft = penaltyTime;
+    _rb.velocity = Vector3.zero;
+    transform.position = new Vector3(0, 2.0f, 0);
   }
 }
